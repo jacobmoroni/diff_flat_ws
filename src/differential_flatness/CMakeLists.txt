@@ -7,12 +7,62 @@ project(differential_flatness)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
+#find_package(catkin REQUIRED COMPONENTS
+  #roscpp
+  #rospy
+#)
+
+set(CMAKE_CXX_STANDARD 11)
+if (NOT CMAKE_BUILD_TYPE)
+    message(STATUS "No build type selected, default to Release")
+    set(CMAKE_BUILD_TYPE "Release")
+endif()
+
+set(CMAKE_CXX_FLAGS "-fopenmp")
+
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
+  dynamic_reconfigure
+  rosflight_msgs
+  rosflight_utils
+  std_msgs
+  nav_msgs
+  sensor_msgs
+  rosbag
+  roslib
+  roscopter
+)
+find_package(Eigen3 REQUIRED)
+
+generate_dynamic_reconfigure_options(
+  cfg/Controller.cfg
 )
 
-## System dependencies are found with CMake's conventions
+catkin_package(
+  INCLUDE_DIRS include ${EIGEN3_INCLUDE_DIRS}
+  CATKIN_DEPENDS roscpp rospy dynamic_reconfigure eigen_conversions
+    rosflight_msgs rosflight_utils std_msgs nav_msgs sensor_msgs roslib roscopter
+  DEPENDS EIGEN3
+)
+
+###########
+## Build ##
+###########
+
+include_directories(include 
+  ${EIGEN3_INCLUDE_DIRS} 
+  ${catkin_INCLUDE_DIRS}
+  )
+
+## Declare cpp executables
+add_executable(df_controller
+  src/df_controller_node.cpp
+  src/df_controller.cpp
+  include/df_controller.h
+  src/simple_pid.cpp)
+add_dependencies(df_controller ${catkin_EXPORTED_TARGETS})
+target_link_libraries(df_controller ${catkin_LIBRARIES})
 # find_package(Boost REQUIRED COMPONENTS system)
 
 
@@ -101,12 +151,12 @@ find_package(catkin REQUIRED COMPONENTS
 ## LIBRARIES: libraries you create in this project that dependent projects also need
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
-catkin_package(
+#catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES differential_flatness
 #  CATKIN_DEPENDS roscpp rospy
 #  DEPENDS system_lib
-)
+#)
 
 ###########
 ## Build ##
@@ -114,10 +164,10 @@ catkin_package(
 
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
-include_directories(
+#include_directories(
 # include
-  ${catkin_INCLUDE_DIRS}
-)
+  #${catkin_INCLUDE_DIRS}
+#)
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}

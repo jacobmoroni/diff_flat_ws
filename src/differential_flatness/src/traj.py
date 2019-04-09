@@ -16,14 +16,14 @@ class Trajectory():
         self.alpha = 2.5
         self.beta = 1.25
         self.eta = -2.0
-        self.omega = 0.05#2#2.5
-
+        self.omega_f = 2#2.5
+        self.omega_s = 0.05
         # self.alpha = 3.0
         # self.beta = 3.0
         # self.eta = -1.0
         # self.omega = 2#2.5
 
-        self.takeoff_time = 30
+        self.takeoff_time = 10#30.0
         self.g = rospy.get_param('dynamics/gravity',9.80665)
         self.mass = rospy.get_param('dynamics/mass')
 
@@ -31,6 +31,7 @@ class Trajectory():
         self.theta_dot = 0.0
 
         self.prev_time = rospy.get_time()
+        self.start_time = self.prev_time #for some reason gazebo is starting at 40
 
         # Set Up Publishers and Subscribers
         self.xhat_sub_ = rospy.Subscriber('state', Odometry, self.odometryCallback, queue_size=5)
@@ -45,13 +46,19 @@ class Trajectory():
         while not rospy.is_shutdown():
             # wait for new messages and call the callback when they arrive
             rospy.spin()
-
+    
+    def alphaBlend(self,spinup_time):
+        alpha = min(1,(self.t-self.takeoff_time)/spinup_time)
+        omega = (1-alpha)*self.omega_s + alpha*self.omega_f
+        return omega
 
     def odometryCallback(self, msg):
-        self.t = rospy.get_time()
+        self.t = rospy.get_time()-self.start_time
+
         if self.t <= self.takeoff_time:
             if self.t <= self.takeoff_time/5.0:
-                pn = self.alpha/self.takeoff_time*self.t*5
+                # pn = self.alpha/self.takeoff_time*self.t*5
+                pn = self.alpha#/self.takeoff_time*self.t*5
                 pe = 0
                 pd = self.eta/self.takeoff_time*self.t*5
                 psi = 0
@@ -72,6 +79,9 @@ class Trajectory():
             psidot = 0;
 
         else:
+            
+            # self.omega = self.alphaBlend(60.0)
+            self.omega = self.alphaBlend(0.05)
             # if self.t-self.takeoff_time < 30:
             #     self.omega = 1#2*(self.t-self.takeoff_time)/30
             # Trajectory
@@ -130,7 +140,7 @@ class Trajectory():
         self.u_ff.z = psidot
 
 
-        self.u_ff.mode = Command.MODE_ROLL_PITCH_YAWRATE_THROTTLE
+        self.u_ff.mode = Command.MODE_XACC_YACC_YAWRATE_AZ
 
         self.cmd.mode = Command.MODE_XPOS_YPOS_YAW_ALTITUDE
         self.traj_pub_.publish(self.cmd)

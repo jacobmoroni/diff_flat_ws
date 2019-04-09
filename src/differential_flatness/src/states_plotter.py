@@ -27,11 +27,11 @@ class Plotter:
 
         # setup subsribers
         # rospy.Subscriber('/ekf_estimate', Odometry, self.estimateCallback)
-        rospy.Subscriber('/slammer/ground_truth/odometry/NED', Odometry, self.truthCallback)
-        rospy.Subscriber('/slammer/high_level_command', Command, self.trajecoryCallback)
-        rospy.Subscriber('/slammer/xdes_vel', Command, self.xdesCallback)
-        rospy.Subscriber('/slammer/diff_flat_cmd', Command, self.uffCallback)
-        rospy.Subscriber('/slammer/command', Command, self.cmdCallback)
+        rospy.Subscriber('ground_truth/odometry/NED', Odometry, self.truthCallback)
+        rospy.Subscriber('high_level_command', Command, self.trajecoryCallback)
+        rospy.Subscriber('xdes_vel', Command, self.xdesCallback)
+        rospy.Subscriber('diff_flat_cmd', Command, self.uffCallback)
+        rospy.Subscriber('command', Command, self.cmdCallback)
         rospy.Timer(rospy.Duration(2), self.savecallback)
 
 
