@@ -1,9 +1,16 @@
 #!/usr/bin/env python
 
+'''
+LQR.py 
+LQR controller for differential flatness, takes in the desired position,
+velocities and acceleration (feed forward control) and controls on the 
+error space to close the gap between the feed forward control and the desired position
+
+'''
+
+
 import numpy as np
-
 import rospy, tf
-
 from std_msgs.msg import Bool
 from nav_msgs.msg import Odometry
 from rosflight_msgs.msg import Command
@@ -45,6 +52,8 @@ class LQR():
         self.peddot_c = 0.0
         self.pdddot_c = 0.0
         self.r_c = 0.0
+        self.control_mode = 0
+        # State space representation of the simplified system 
         #x = [Pn, Pe, Pd, dPn, dPe, dPd, psi]
         #u = [ddPn, ddPe, ddPd, dPsi]
         #y = [Pn,Pe,Pd,psi]
@@ -70,40 +79,63 @@ class LQR():
                       [0,1,0,0,0,0,0],
                       [0,0,1,0,0,0,0],
                       [0,0,0,0,0,0,1]])
+
+        #TODO: back out max acc from max angle commands in params
+        #TODO: saturate error state and use that as parameters in Q
+        #TODO: change Q and R to use those parameters to fly
+
+        # Compute K for lqr controller gains
         #from brysons rule Qii = 1/max allowable state
         # Rii = 1/max allowable control
         
+        # for Q
+        lateral_e_max = 1.0
+        vertical_e_max = 1.0
+        psi_e_max = 10.0
+
+        Q = np.diag([1/lateral_e_max,
+                     1/lateral_e_max,
+                     1/vertical_e_max,
+                     0,
+                     0,
+                     0,
+                     1/psi_e_max])
+
+        # for R
+        lateral_acc_max = 0.01
+        vertical_acc_max = 0.001
+        psidot_max = 0.1
+
+        R = np.diag([1/lateral_acc_max,
+                     1/lateral_acc_max,
+                     1/vertical_acc_max,
+                     1/psidot_max])
+
         # Q = 0.1*np.matmul(C.T,C)
         # R = 12*np.eye(4)
 
         # Q = np.diag([.01,.01,.1,0,0,0,0.1])
         # R = np.diag([1000,1000,1000,12])
-        
-        Q = np.diag([1/1.0,1/1.0,1/1.0,0,0,0,1/10.0])
-        R = np.diag([1/0.01,1/0.01,1/0.001,1/0.1])
 
-
-        # Q = np.diag([10,10,10,10,10,10,0.1])
-        # R = np.diag([1000,1000,1000,12])
         self.K,S,E = self.computeLQR(A,B,Q,R)
-        # print ('%.3f' % self.K)
-        # self.K = np.array([[1.0,0,0,1.4142,0,0,0],
-                           # [0,1.0,0,0,1.4142,0,0],
-                           # [0,0,1.0,0,0,1.4142,0],
-                           # [0,0,0  ,0,0,0     ,1]])
 
         self.prev_time = rospy.get_time()
 
         # Set Up Publishers and Subscribers
-        self.xhat_sub_ = rospy.Subscriber('state', Odometry, self.odometryCallback, queue_size=5)
-        self.cmd_sub_ = rospy.Subscriber('high_level_command', Command, self.hlcCallback, queue_size=5)
-        self.uff_sub_ = rospy.Subscriber('feed_forward_control', Command, self.uffCallback, queue_size=5)
-        self.xdes_sub_ = rospy.Subscriber('xdes_vel', Command, self.xdesCallback, queue_size=5)
-        self.is_flying_sub_ = rospy.Subscriber('is_flying',Bool,self.isFlyingCallback,queue_size = 5)
-        self.command_pub_ = rospy.Publisher('u_raw', Command, queue_size=5, latch=True)
+        self.xhat_sub_ = rospy.Subscriber('state', Odometry, 
+                self.odometryCallback, queue_size=5)
+        self.cmd_sub_ = rospy.Subscriber('trajectory', Command, 
+                self.trajCallback, queue_size=5)
+        self.uff_sub_ = rospy.Subscriber('u_ff', Command, 
+                self.uffCallback, queue_size=5)
+        self.xdes_sub_ = rospy.Subscriber('xdes_vel', Command, 
+                self.xdesCallback, queue_size=5)
+        self.is_flying_sub_ = rospy.Subscriber('is_flying',Bool,
+                self.isFlyingCallback,queue_size = 5)
+
+        self.command_pub_ = rospy.Publisher('u_command', Command, queue_size=5, latch=True)
 
         self.u_raw = Command()
-        self.u_raw.mode = Command.MODE_XACC_YACC_YAWRATE_AZ
         self.flying = False
         # while not rospy.is_shutdown():
         #     # wait for new messages and call the callback when they arrive
@@ -127,8 +159,11 @@ class LQR():
 
     def update(self):
         X = np.array([self.pn,self.pe,self.pd,self.pndot,self.pedot,self.pddot,self.psi])
-        X_des = np.array([self.pn_d,self.pe_d,self.pd_d,self.pndot_d,self.pedot_d,self.pddot_d,self.psi_d,])
-        # print X
+
+        X_des = np.array([self.pn_d,self.pe_d,self.pd_d,
+                          self.pndot_d,self.pedot_d,self.pddot_d,
+                          self.psi_d,])
+        # Error state
         X_tilde = X-X_des
 
         u_tilde = np.matmul(-self.K,X_tilde)
@@ -136,18 +171,21 @@ class LQR():
         u_ff = np.array([self.pnddot_c,self.peddot_c,self.pdddot_c,self.r_c])
 
         u = u_tilde+u_ff
-
+        
         self.u_raw.x = u[0]
         self.u_raw.y = u[1]
         self.u_raw.F = u[2]
         self.u_raw.z = u[3]
+        if self.control_mode == 0:
+            self.u_raw.mode = 0
+        else:
+            self.u_raw.mode = Command.MODE_XACC_YACC_YAWRATE_AZ
 
         if self.flying == True:
             self.command_pub_.publish(self.u_raw)
 
     def isFlyingCallback(self,msg):
         self.flying = msg.data
-        print (self.flying)
 
     def odometryCallback(self, msg):
         self.t = rospy.get_time()
@@ -182,7 +220,7 @@ class LQR():
         cs = np.cos(self.psi);
         ss = np.sin(self.psi);
 
-         # translational kinematics model
+        # translational kinematics model
         tkm = np.array([[ct*cs, sp*st*cs-cp*ss, cp*st*cs+sp*ss],
                         [ct*ss, sp*st*ss+cp*cs, cp*st*ss-sp*cs],
                         [-st  , sp*ct         , cp*ct]])
@@ -205,7 +243,7 @@ class LQR():
             self.r = msg.twist.twist.angular.z
 
 
-    def hlcCallback(self, msg):
+    def trajCallback(self, msg):
         self.t = rospy.get_time()
         self.pn_d = msg.x
         self.pe_d = msg.y
@@ -218,6 +256,7 @@ class LQR():
         self.peddot_c = msg.y
         self.pdddot_c = msg.F
         self.r_c = msg.z
+        self.control_mode = msg.mode
 
     def xdesCallback(self, msg):
         self.t = rospy.get_time()
@@ -240,11 +279,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-# if __name__ == '__main__':
-#     rospy.init_node('LQR', anonymous=True)
-#     try:
-#         lqr = LQR()
-#     except:
-#         rospy.ROSInterruptException
-#     pass

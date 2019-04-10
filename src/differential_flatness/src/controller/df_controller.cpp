@@ -1,4 +1,4 @@
-#include <controller/df_controller.h>
+#include <df_controller.h>
 #include <stdio.h>
 
 namespace controller
@@ -53,6 +53,7 @@ void Controller::dfCmdCallback(const rosflight_msgs::CommandConstPtr &msg)
   dfc_.theta = msg->y;
   dfc_.throttle = msg->F;
   dfc_.r = msg->z;
+  df_control_mode_ = msg->mode;
 }
 
 void Controller::stateCallback(const nav_msgs::OdometryConstPtr &msg)
@@ -296,22 +297,30 @@ void Controller::computeControl(double dt)
   {
     // Pack up and send the command
     command_.mode = rosflight_msgs::Command::MODE_ROLL_PITCH_YAWRATE_THROTTLE;
-    //command_.F = saturate(xc_.throttle, max_.throttle, 0.0);
-    //command_.x = saturate(xc_.phi, max_.roll, -max_.roll);
-    //command_.y = saturate(xc_.theta, max_.pitch, -max_.pitch);
-    //command_.z = saturate(xc_.r, max_.yaw_rate, -max_.yaw_rate);
+    
+    if (df_control_mode_ == 0)
+    {
+      //use only pid control
+      command_.F = saturate(xc_.throttle, max_.throttle, 0.0);
+      command_.x = saturate(xc_.phi, max_.roll, -max_.roll);
+      command_.y = saturate(xc_.theta, max_.pitch, -max_.pitch);
+      command_.z = saturate(xc_.r, max_.yaw_rate, -max_.yaw_rate);
+    }
+
+    if (df_control_mode_ == rosflight_msgs::Command::MODE_ROLL_PITCH_YAWRATE_THROTTLE)
+    {
+      //bypass control and only send LQR controls through
+      command_.F = saturate(dfc_.throttle, max_.throttle, 0.0);
+      command_.x = saturate(dfc_.phi, max_.roll, -max_.roll);
+      command_.y = saturate(dfc_.theta, max_.pitch, -max_.pitch);
+      command_.z = saturate(dfc_.r, max_.yaw_rate, -max_.yaw_rate);
+    }
     
     // add feed forward control for PID control
     //command_.F = saturate(dfc_.throttle, max_.throttle, 0.0);
     //command_.x = saturate(xc_.phi+dfc_.phi, max_.roll, -max_.roll);
     //command_.y = saturate(xc_.theta+dfc_.theta, max_.pitch, -max_.pitch);
     //command_.z = saturate(xc_.r+dfc_.r, max_.yaw_rate, -max_.yaw_rate);
-    
-    //bypass control and only send LQR controls through
-    command_.F = saturate(dfc_.throttle, max_.throttle, 0.0);
-    command_.x = saturate(dfc_.phi, max_.roll, -max_.roll);
-    command_.y = saturate(dfc_.theta, max_.pitch, -max_.pitch);
-    command_.z = saturate(dfc_.r, max_.yaw_rate, -max_.yaw_rate);
   }
 }
 

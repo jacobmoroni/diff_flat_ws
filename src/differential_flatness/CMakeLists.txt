@@ -57,10 +57,10 @@ include_directories(include
 
 ## Declare cpp executables
 add_executable(df_controller
-  src/df_controller_node.cpp
-  src/df_controller.cpp
+  src/controller/df_controller_node.cpp
+  src/controller/df_controller.cpp
   include/df_controller.h
-  src/simple_pid.cpp)
+  src/controller/simple_pid.cpp)
 add_dependencies(df_controller ${catkin_EXPORTED_TARGETS})
 target_link_libraries(df_controller ${catkin_LIBRARIES})
 # find_package(Boost REQUIRED COMPONENTS system)

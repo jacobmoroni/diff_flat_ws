@@ -28,7 +28,7 @@ class Plotter:
         # setup subsribers
         # rospy.Subscriber('/ekf_estimate', Odometry, self.estimateCallback)
         rospy.Subscriber('ground_truth/odometry/NED', Odometry, self.truthCallback)
-        rospy.Subscriber('high_level_command', Command, self.trajecoryCallback)
+        rospy.Subscriber('trajectory', Command, self.trajecoryCallback)
         rospy.Subscriber('xdes_vel', Command, self.xdesCallback)
         rospy.Subscriber('diff_flat_cmd', Command, self.uffCallback)
         rospy.Subscriber('command', Command, self.cmdCallback)

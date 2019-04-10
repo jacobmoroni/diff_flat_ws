@@ -1,5 +1,11 @@
 #!/usr/bin/env python
 
+'''
+inverse.py
+Takes in as input the u command (commanded accelerations and yawrate) 
+and converts it to the v command (commanded angles, yawrate, and thrust)
+'''
+
 import numpy as np
 
 import rospy, tf
@@ -29,38 +35,46 @@ class Inverse():
         self.prev_time = rospy.get_time()
         self.t = 0
         # Set Up Publishers and Subscribers
-        # self.cmd_sub_ = rospy.Subscriber('u_raw', Command, self.urawCallback, queue_size=5)
-        self.cmd_sub_ = rospy.Subscriber('feed_forward_control', Command, self.urawCallback, queue_size=5)
+        self.cmd_sub_ = rospy.Subscriber('u_command', Command, self.urawCallback, queue_size=5)
         self.xhat_sub_ = rospy.Subscriber('state', Odometry, self.odometryCallback, queue_size=5)
         self.command_pub_ = rospy.Publisher('v_command', Command, queue_size=5, latch=True)
-
+        
         self.v_command = Command()
-
-    def saturate(self,x,min,max):
-        if x > max:
-            x = max
-        elif x < min:
-            x = min
-        return x
-
+        self.control_mode = 0
+    
+    def saturate(self,command,min_val,max_val):
+        return min(max_val,max(min_val,command))
 
     def update(self):
+        # Invert the command
 
         rot_psi = np.array([[np.cos(self.psi), -np.sin(self.psi), 0],
                             [np.sin(self.psi),  np.cos(self.psi), 0],
                             [0               ,0                 , 1]])
-        T_d = self.mass*np.sqrt(self.pnddot_c*self.pnddot_c+self.peddot_c*self.peddot_c+self.pdddot_c*self.pdddot_c)
-
-        z = np.matmul(rot_psi,np.array([[float(self.pnddot_c)],[float(self.peddot_c)],[float(self.pdddot_c)]]))*self.mass/(-T_d)
-
+        #eqn 11 from paper
+        T_d = self.mass*np.sqrt(self.pnddot_c*self.pnddot_c+
+                                self.peddot_c*self.peddot_c+
+                                self.pdddot_c*self.pdddot_c)
+        
+        #eqn 13 from paper
+        z = np.matmul(rot_psi,np.array([[float(self.pnddot_c)],
+                                        [float(self.peddot_c)],
+                                        [float(self.pdddot_c)]]))*self.mass/(-T_d)
+        #eqn 14 from paper
         phi_d = np.arcsin(float(-z[1]))
-        theta_d = np.arctan2(z[0],z[2])
+        #eqn 15 from paper
+        theta_d = np.arctan2(float(z[0]),float(z[2]))
+        #eqn 16 from paper
         r_d = self.r_c*np.cos(self.theta)*np.cos(self.phi)-self.q*np.sin(self.phi)
 
         self.v_command.x = phi_d
         self.v_command.y = theta_d
         self.v_command.F = T_d
         self.v_command.z = r_d
+        if self.control_mode == 0:
+            self.v_command.mode = 0
+        else:
+            self.v_command.mode = Command.MODE_ROLL_PITCH_YAWRATE_THROTTLE
 
         self.command_pub_.publish(self.v_command)
 
@@ -93,6 +107,7 @@ class Inverse():
         self.peddot_c = msg.y
         self.pdddot_c = msg.F
         self.r_c = msg.z
+        self.control_mode = msg.mode
 
 def main():
     rospy.init_node('Inverse_control',anonymous=True)
