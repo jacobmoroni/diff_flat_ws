@@ -65,8 +65,12 @@ class Attitude():
 
         #Add pd control to get height to desired height
         # T_d = self.F_c + self.PD(self.pd,self.pd_c,self.w,1,.1
-        T_d = self.F_c - self.PD(self.pd,self.pd_c,self.w,.5,1)
-        T_d = T_d*T_correct
+
+        #I just commented these lines out
+        T_d = self.F_c #- self.PD(self.pd, self.pd_c,self.w,.5,1)
+        # T_d = T_d*T_correct
+        
+        
         # phi_d = self.PD(self.phi,self.phi_c,self.p,7.6394,0.9592)
         # theta_d = self.PD(self.theta,self.theta_c,self.q,7.6394,1.5596)
         # r_d = self.PD(self.r,self.r_c,0,2.8648,0)

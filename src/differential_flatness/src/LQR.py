@@ -45,6 +45,8 @@ class LQR():
         self.peddot_c = 0.0
         self.pdddot_c = 0.0
         self.r_c = 0.0
+
+        self.max_errors = np.array([.5,.5,.5,3,3,3,1])
         #x = [Pn, Pe, Pd, dPn, dPe, dPd, psi]
         #u = [ddPn, ddPe, ddPd, dPsi]
         #y = [Pn,Pe,Pd,psi]
@@ -72,26 +74,26 @@ class LQR():
                       [0,0,0,0,0,0,1]])
         #from brysons rule Qii = 1/max allowable state
         # Rii = 1/max allowable control
-        
-        # Q = 0.1*np.matmul(C.T,C)
+        lat_max_err = 1.0
+        vert_max_err = 0.7#1.0
+        psi_max_err = 10.0
+
+        max_lat_acc = 0.0012#0.01
+        max_vert_acc = 0.00001#0.03#0.001
+        max_psi_vel = 0.1
+
+        # Q = np.eye(7)
+        Q = np.matmul(C.T,C)
         # R = 12*np.eye(4)
 
         # Q = np.diag([.01,.01,.1,0,0,0,0.1])
         # R = np.diag([1000,1000,1000,12])
-        
-        Q = np.diag([1/1.0,1/1.0,1/1.0,0,0,0,1/10.0])
-        R = np.diag([1/0.01,1/0.01,1/0.001,1/0.1])
 
+        # Q = np.diag([1/lat_max_err,1/lat_max_err,1/vert_max_err,0,0,0,1/psi_max_err])
+        R = np.diag([1/max_lat_acc,1/max_lat_acc,1/max_vert_acc,1/max_psi_vel])
 
-        # Q = np.diag([10,10,10,10,10,10,0.1])
-        # R = np.diag([1000,1000,1000,12])
         self.K,S,E = self.computeLQR(A,B,Q,R)
-        # print ('%.3f' % self.K)
-        # self.K = np.array([[1.0,0,0,1.4142,0,0,0],
-                           # [0,1.0,0,0,1.4142,0,0],
-                           # [0,0,1.0,0,0,1.4142,0],
-                           # [0,0,0  ,0,0,0     ,1]])
-
+        print(E)
         self.prev_time = rospy.get_time()
 
         # Set Up Publishers and Subscribers
@@ -108,6 +110,8 @@ class LQR():
         # while not rospy.is_shutdown():
         #     # wait for new messages and call the callback when they arrive
         #     rospy.spin()
+    def saturate(self,command,min_val,max_val):
+        return min(max_val,max(min_val,command))
 
     def computeLQR(self,A,B,Q,R):
         """Solve the continuous time lqr controller.
@@ -130,7 +134,8 @@ class LQR():
         X_des = np.array([self.pn_d,self.pe_d,self.pd_d,self.pndot_d,self.pedot_d,self.pddot_d,self.psi_d,])
         # print X
         X_tilde = X-X_des
-
+        X_tilde = np.clip(X_tilde,-self.max_errors,self.max_errors) 
+        # print X_tilde
         u_tilde = np.matmul(-self.K,X_tilde)
 
         u_ff = np.array([self.pnddot_c,self.peddot_c,self.pdddot_c,self.r_c])

@@ -296,10 +296,10 @@ void Controller::computeControl(double dt)
   {
     // Pack up and send the command
     command_.mode = rosflight_msgs::Command::MODE_ROLL_PITCH_YAWRATE_THROTTLE;
-    //command_.F = saturate(xc_.throttle, max_.throttle, 0.0);
-    //command_.x = saturate(xc_.phi, max_.roll, -max_.roll);
-    //command_.y = saturate(xc_.theta, max_.pitch, -max_.pitch);
-    //command_.z = saturate(xc_.r, max_.yaw_rate, -max_.yaw_rate);
+    command_.F = saturate(xc_.throttle, max_.throttle, 0.0);
+    command_.x = saturate(xc_.phi, max_.roll, -max_.roll);
+    command_.y = saturate(xc_.theta, max_.pitch, -max_.pitch);
+    command_.z = saturate(xc_.r, max_.yaw_rate, -max_.yaw_rate);
     
     // add feed forward control for PID control
     //command_.F = saturate(dfc_.throttle, max_.throttle, 0.0);
@@ -308,10 +308,10 @@ void Controller::computeControl(double dt)
     //command_.z = saturate(xc_.r+dfc_.r, max_.yaw_rate, -max_.yaw_rate);
     
     //bypass control and only send LQR controls through
-    command_.F = saturate(dfc_.throttle, max_.throttle, 0.0);
-    command_.x = saturate(dfc_.phi, max_.roll, -max_.roll);
-    command_.y = saturate(dfc_.theta, max_.pitch, -max_.pitch);
-    command_.z = saturate(dfc_.r, max_.yaw_rate, -max_.yaw_rate);
+    //command_.F = saturate(dfc_.throttle, max_.throttle, 0.0);
+    //command_.x = saturate(dfc_.phi, max_.roll, -max_.roll);
+    //command_.y = saturate(dfc_.theta, max_.pitch, -max_.pitch);
+    //command_.z = saturate(dfc_.r, max_.yaw_rate, -max_.yaw_rate);
   }
 }
 

@@ -16,14 +16,14 @@ class Trajectory():
         self.alpha = 2.5
         self.beta = 1.25
         self.eta = -2.0
-        self.omega_f = 2#2.5
+        self.omega_f = 1#2
         self.omega_s = 0.05
         # self.alpha = 3.0
         # self.beta = 3.0
         # self.eta = -1.0
         # self.omega = 2#2.5
 
-        self.takeoff_time = 10#30.0
+        self.takeoff_time = 1000#30.0
         self.g = rospy.get_param('dynamics/gravity',9.80665)
         self.mass = rospy.get_param('dynamics/mass')
 
@@ -57,10 +57,9 @@ class Trajectory():
 
         if self.t <= self.takeoff_time:
             if self.t <= self.takeoff_time/5.0:
-                # pn = self.alpha/self.takeoff_time*self.t*5
                 pn = self.alpha#/self.takeoff_time*self.t*5
                 pe = 0
-                pd = self.eta/self.takeoff_time*self.t*5
+                pd = self.eta#/self.takeoff_time*self.t*5
                 psi = 0
             else:
                 pn = self.alpha
