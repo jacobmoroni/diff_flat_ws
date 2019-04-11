@@ -2,7 +2,7 @@
 <launch>
   <arg name="visualize"             default="true"/>
   <arg name="mav_name"              default="multirotor"/>
-  <arg name="color"                 default="Black"/>
+  <arg name="color"                 default="White"/>
   <arg name="x"                     default="2.5"/>
   <arg name="y"                     default="0"/>
   <arg name="z"                     default="0.1"/>
@@ -44,7 +44,7 @@
   <group ns="$(arg mav_name)">
 
     <!-- Load common parameters -->
-    <rosparam command="load" file="$(find differential_flatness)/agents/$(arg mav_name).yaml"/>
+    <rosparam command="load" file="$(find differential_flatness)/params/$(arg mav_name).yaml"/>
 
     <!-- Is Flying Publisher -->
     <node pkg="rostopic" type="rostopic" name="is_flying_pub" args="pub is_flying std_msgs/Bool true"/>
@@ -56,20 +56,19 @@
     <node name="controller" pkg="differential_flatness" type="df_controller" output="screen">
       <remap from="estimate" to="ground_truth/odometry/NED"/>
       <remap from="diff_flat_command" to="diff_flat_cmd"/> 
-      <!--<remap from="estimate" to="estimate"/>-->
+      <remap from="high_level_command" to="trajectory"/>
     </node>
 
-    <!-- LQR Controller -->
-     <node name="LQR" pkg="differential_flatness" type="LQR.py" output="screen">
-      <remap from="state" to="ground_truth/odometry/NED"/>
-      <remap from="estimate" to="estimate"/>
-    </node> 
+    <!--[> LQR Controller <]-->
+     <!--<node name="LQR" pkg="differential_flatness" type="LQR.py" output="screen">-->
+      <!--<remap from="state" to="ground_truth/odometry/NED"/>-->
+      <!--<remap from="estimate" to="estimate"/>-->
+    <!--</node> -->
 
     <!-- inverse -->
     <node name="inverse" pkg="differential_flatness" type="inverse.py" output="screen">
       <remap from="state" to="ground_truth/odometry/NED"/>
-      <remap from="feed_forward_control" to="u_raw"/>
-       <!--<remap from="command" to="diff_flat_cmd"/> -->
+      <remap from="u_command" to="u_ff"/>
     </node>
 
     <!-- Attitude_control -->

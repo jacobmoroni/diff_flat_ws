@@ -124,6 +124,7 @@ private:
   double prev_time_;
   uint8_t control_mode_;
   uint8_t df_control_mode_;
+  int df_control_type_;
   // Functions
   void stateCallback(const nav_msgs::OdometryConstPtr &msg);
   void isFlyingCallback(const std_msgs::BoolConstPtr &msg);

@@ -29,6 +29,7 @@ Controller::Controller() :
   nh_private_.getParam("max_n_dot", max_.n_dot);
   nh_private_.getParam("max_e_dot", max_.e_dot);
   nh_private_.getParam("max_d_dot", max_.d_dot);
+  nh_private_.getParam("control_type", df_control_type_);
 
   _func = boost::bind(&Controller::reconfigure_callback, this, _1, _2);
   _server.setCallback(_func);
@@ -210,7 +211,7 @@ void Controller::reconfigure_callback(roscopter::ControllerConfig& config,
   resetIntegrators();
 }
 
-
+//TODO: try swapping out this function with old roscopter function
 void Controller::computeControl(double dt)
 {
   if(dt <= 0.0000001)
@@ -238,6 +239,7 @@ void Controller::computeControl(double dt)
     {
       xc_.psi -= 2*M_PI;
     }
+    //missing saturation
     xc_.r = PID_psi_.computePID(xc_.psi, xhat_.psi, dt);
 
     xc_.x_dot = pndot_c*cos(xhat_.psi) + pedot_c*sin(xhat_.psi);
@@ -297,8 +299,7 @@ void Controller::computeControl(double dt)
   {
     // Pack up and send the command
     command_.mode = rosflight_msgs::Command::MODE_ROLL_PITCH_YAWRATE_THROTTLE;
-    
-    if (df_control_mode_ == 0)
+    if (df_control_type_ == 0)
     {
       //use only pid control
       command_.F = saturate(xc_.throttle, max_.throttle, 0.0);
@@ -306,21 +307,42 @@ void Controller::computeControl(double dt)
       command_.y = saturate(xc_.theta, max_.pitch, -max_.pitch);
       command_.z = saturate(xc_.r, max_.yaw_rate, -max_.yaw_rate);
     }
-
-    if (df_control_mode_ == rosflight_msgs::Command::MODE_ROLL_PITCH_YAWRATE_THROTTLE)
+    if (df_control_type_ == 2)
     {
-      //bypass control and only send LQR controls through
-      command_.F = saturate(dfc_.throttle, max_.throttle, 0.0);
-      command_.x = saturate(dfc_.phi, max_.roll, -max_.roll);
-      command_.y = saturate(dfc_.theta, max_.pitch, -max_.pitch);
-      command_.z = saturate(dfc_.r, max_.yaw_rate, -max_.yaw_rate);
+      if (df_control_mode_ == 0)
+      {
+        //use only pid control
+        command_.F = saturate(xc_.throttle, max_.throttle, 0.0);
+        command_.x = saturate(xc_.phi, max_.roll, -max_.roll);
+        command_.y = saturate(xc_.theta, max_.pitch, -max_.pitch);
+        command_.z = saturate(xc_.r, max_.yaw_rate, -max_.yaw_rate);
+      }
+
+      if (df_control_mode_ == rosflight_msgs::Command::MODE_ROLL_PITCH_YAWRATE_THROTTLE)
+      {
+        //bypass control and only send LQR controls through
+        command_.F = saturate(dfc_.throttle, max_.throttle, 0.0);
+        command_.x = saturate(dfc_.phi, max_.roll, -max_.roll);
+        command_.y = saturate(dfc_.theta, max_.pitch, -max_.pitch);
+        command_.z = saturate(dfc_.r, max_.yaw_rate, -max_.yaw_rate);
+      }
+
     }
-    
-    // add feed forward control for PID control
-    //command_.F = saturate(dfc_.throttle, max_.throttle, 0.0);
-    //command_.x = saturate(xc_.phi+dfc_.phi, max_.roll, -max_.roll);
-    //command_.y = saturate(xc_.theta+dfc_.theta, max_.pitch, -max_.pitch);
-    //command_.z = saturate(xc_.r+dfc_.r, max_.yaw_rate, -max_.yaw_rate);
+            
+    if (df_control_type_ == 1 || df_control_type_ == 3)
+    {
+      // add feed forward control for PID control
+      command_.F = saturate(dfc_.throttle, max_.throttle, 0.0);
+      command_.x = saturate(xc_.phi+dfc_.phi, max_.roll, -max_.roll);
+      command_.y = saturate(xc_.theta+dfc_.theta, max_.pitch, -max_.pitch);
+      command_.z = saturate(xc_.r+dfc_.r, max_.yaw_rate, -max_.yaw_rate);
+   
+      //command_.F = saturate(dfc_.throttle, max_.throttle, 0.0);
+      //command_.x = saturate(dfc_.phi, max_.roll, -max_.roll);
+      //command_.y = saturate(dfc_.theta, max_.pitch, -max_.pitch);
+      //command_.z = saturate(dfc_.r, max_.yaw_rate, -max_.yaw_rate);
+    }
+
   }
 }
 
