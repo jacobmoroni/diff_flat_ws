@@ -33,7 +33,7 @@ ControllerOld::ControllerOld() :
   state_sub_ = nh_.subscribe("estimate", 1, &ControllerOld::stateCallback, this);
   is_flying_sub_ = nh_.subscribe("is_flying", 1, &ControllerOld::isFlyingCallback, this);
   cmd_sub_ = nh_.subscribe("high_level_command", 1, &ControllerOld::cmdCallback, this);
-  uff_sub_ = nh_.subscribe("diff_flat_cmd", 1, &ControllerOld::u_ffCallback, this);
+  uff_sub_ = nh_.subscribe("diff_flat_command", 1, &ControllerOld::u_ffCallback, this);
 
   command_pub_ = nh_.advertise<rosflight_msgs::Command>("command", 1);
 }
@@ -133,6 +133,7 @@ void ControllerOld::u_ffCallback(const rosflight_msgs::CommandConstPtr &msg)
     xc_.T_r = msg->F;
     // xc_.T_r = xc_.T_r*thrust_eq_;
     xc_.r_r = msg->z;
+    df_control_mode_ = msg->mode;
 }
 
 void ControllerOld::reconfigure_callback(roscopter::ControllerConfig &config, uint32_t level)

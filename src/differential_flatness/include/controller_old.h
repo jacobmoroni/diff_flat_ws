@@ -104,6 +104,7 @@ private:
   state_t xc_ = {}; // command
   double prev_time_;
   uint8_t control_mode_;
+  uint8_t df_control_mode_;
 
   // Functions
   void stateCallback(const nav_msgs::OdometryConstPtr &msg);

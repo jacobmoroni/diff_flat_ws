@@ -53,7 +53,7 @@
     <node pkg="rostopic" type="rostopic" name="status_pub" args="pub -r 1 status rosflight_msgs/Status '{armed: true, failsafe: false, rc_override: false, offboard: true, error_code: 0, num_errors: 0, loop_time_us: 1}'"/>
 
     <!-- PID Position Controller -->
-    <node name="controller" pkg="differential_flatness" type="df_controller" output="screen">
+    <node name="controller" pkg="differential_flatness" type="controller_old" output="screen">
       <remap from="estimate" to="ground_truth/odometry/NED"/>
       <remap from="diff_flat_command" to="diff_flat_cmd"/> 
       <remap from="high_level_command" to="trajectory"/>
