@@ -23,7 +23,7 @@ class Trajectory():
         self.alpha = 2.5 #amplitude of pn wave
         self.beta = 1.25 #amplitude of pe wave
         self.eta = -2.0 #pd
-        self.omega_f = 2 #period of cycle final
+        self.omega_f = 1.5 #period of cycle final
         self.omega_s = 0.05 #period of cycle start
 
 
@@ -68,27 +68,53 @@ class Trajectory():
         if self.t <= self.takeoff_time:
             # first get into position to start the feed forward trajectory
             #override mode value to tell controller how to handle u_ff
+
+            #also set up a roll in so that velocity is correct when trajectory starts
+            rollin = 2 * self.takeoff_time/10
+            amp = self.beta*self.alpha
+            omega_roll = np.pi/(2*rollin)
+            offset = -amp/omega_roll
+
+            # # to turn off roll in
+            # rollin = 0
+            # amp = 0
+            # omega_roll = 0
+            # offset = 0
+            
             self.u_ff.mode = 0 #this says to just use PID to get into position
             if self.t <= self.takeoff_time/5.0:
                 # to avoid a step input in the beginning, this creates a ramp 
                 # up to the step to get it into position for trajectory
                 pn = self.alpha#/self.takeoff_time*self.t*5
-                pe = 0
+                pe = offset
                 pd = self.eta/self.takeoff_time*self.t*5
                 psi = 0
-            else:
+                pedot = 0
+                peddot = 0
+            elif self.t <= (self.takeoff_time-rollin):
                 pn = self.alpha
-                pe = 0
+                pe = offset
                 pd = self.eta
                 psi = 0
+                pedot = 0
+                peddot = 0
+            else:
+                # this is where roll in is implemented
+                self.uff_mode = 1
+                pn = self.alpha
+                pe = offset*np.cos(omega_roll*(self.t-self.takeoff_time+rollin))
+                pd = self.eta
+                psi = 0
+                pedot = amp*np.sin(omega_roll*(self.t-self.takeoff_time+rollin))
+                peddot = omega_roll*amp*np.cos(omega_roll*(self.t-self.takeoff_time+rollin))
             #
             pndot = 0
-            pedot = 0
+           
             pddot = 0
 
             # Feed Forward Controls
             pnddot = 0
-            peddot = 0
+            
             pdddot = 0-self.g;
             psidot = 0;
 

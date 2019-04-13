@@ -63,6 +63,14 @@ add_executable(df_controller
   src/controller/simple_pid.cpp)
 add_dependencies(df_controller ${catkin_EXPORTED_TARGETS})
 target_link_libraries(df_controller ${catkin_LIBRARIES})
+
+
+add_executable(controller_old
+  src/controller/controller_old_node.cpp
+  src/controller/controller_old.cpp
+  include/controller_old.h)
+add_dependencies(controller_old ${catkin_EXPORTED_TARGETS})
+target_link_libraries(controller_old ${catkin_LIBRARIES})
 # find_package(Boost REQUIRED COMPONENTS system)
 
 

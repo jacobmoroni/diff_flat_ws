@@ -53,71 +53,15 @@ class LQR():
         self.pdddot_c = 0.0
         self.r_c = 0.0
         self.control_mode = 0
-        # State space representation of the simplified system 
-        #x = [Pn, Pe, Pd, dPn, dPe, dPd, psi]
-        #u = [ddPn, ddPe, ddPd, dPsi]
-        #y = [Pn,Pe,Pd,psi]
-        A = np.array([[0,0,0,1,0,0,0],
-                      [0,0,0,0,1,0,0],
-                      [0,0,0,0,0,1,0],
-                      [0,0,0,0,0,0,0],
-                      [0,0,0,0,0,0,0],
-                      [0,0,0,0,0,0,0],
-                      [0,0,0,0,0,0,0]])
 
-        B = np.array([[0,0,0,0],
-                      [0,0,0,0],
-                      [0,0,0,0],
-                      [1,0,0,0],
-                      [0,1,0,0],
-                      [0,0,1,0],
-                      [0,0,0,1]])
-
-        b = np.array([0,0,0,0,0,1,0])
-        b = b.T
-        C = np.array([[1,0,0,0,0,0,0],
-                      [0,1,0,0,0,0,0],
-                      [0,0,1,0,0,0,0],
-                      [0,0,0,0,0,0,1]])
-
-        #TODO: back out max acc from max angle commands in params
-        #TODO: saturate error state and use that as parameters in Q
-        #TODO: change Q and R to use those parameters to fly
-
-        # Compute K for lqr controller gains
-        #from brysons rule Qii = 1/max allowable state
-        # Rii = 1/max allowable control
-        
-        # for Q
-        lateral_e_max = 1.0
-        vertical_e_max = 1.0
-        psi_e_max = 10.0
-
-        Q = np.diag([1/lateral_e_max,
-                     1/lateral_e_max,
-                     1/vertical_e_max,
-                     0,
-                     0,
-                     0,
-                     1/psi_e_max])
-
-        # for R
-        lateral_acc_max = 0.01
-        vertical_acc_max = 0.001
-        psidot_max = 0.1
-
-        R = np.diag([1/lateral_acc_max,
-                     1/lateral_acc_max,
-                     1/vertical_acc_max,
-                     1/psidot_max])
-
-        # Q = 0.1*np.matmul(C.T,C)
-        # R = 12*np.eye(4)
-
-        # Q = np.diag([.01,.01,.1,0,0,0,0.1])
-        # R = np.diag([1000,1000,1000,12])
-
-        self.K,S,E = self.computeLQR(A,B,Q,R)
+        self.max_roll = rospy.get_param('controller/max_roll', 1.0)
+        self.max_yaw_rate = rospy.get_param('controller/~max_yaw_rate',0.785)
+        self.max_throttle = rospy.get_param('controller/max_throttle',0.85)
+        self.gravity = rospy.get_param('dynamics/gravity',9.80665)
+        self.mass = rospy.get_param('dynamics/mass',2.865)
+        # self.xlim = np.array([0.1,0.28,0.1,0.2,0.5,0.2,0.5])
+        self.xlim = np.array([0.1,0.28,0.1,0.2,1.0,0.2,0.5])
+        self.K = self.findLQRGain()
 
         self.prev_time = rospy.get_time()
 
@@ -157,6 +101,98 @@ class LQR():
          
         return np.array(K), np.array(S), eigVals
 
+    def findLQRGain(self):
+        
+        # State space representation of the simplified system 
+        #x = [Pn, Pe, Pd, dPn, dPe, dPd, psi]
+        #u = [ddPn, ddPe, ddPd, dPsi]
+        #y = [Pn,Pe,Pd,psi]
+        A = np.array([[0,0,0,1,0,0,0],
+                      [0,0,0,0,1,0,0],
+                      [0,0,0,0,0,1,0],
+                      [0,0,0,0,0,0,0],
+                      [0,0,0,0,0,0,0],
+                      [0,0,0,0,0,0,0],
+                      [0,0,0,0,0,0,0]])
+
+        B = np.array([[0,0,0,0],
+                      [0,0,0,0],
+                      [0,0,0,0],
+                      [1,0,0,0],
+                      [0,1,0,0],
+                      [0,0,1,0],
+                      [0,0,0,1]])
+
+        b = np.array([0,0,0,0,0,1,0])
+        b = b.T
+        C = np.array([[1,0,0,0,0,0,0],
+                      [0,1,0,0,0,0,0],
+                      [0,0,1,0,0,0,0],
+                      [0,0,0,0,0,0,1]])
+        
+        R_phi = np.array([[ np.cos(self.max_roll), np.sin(self.max_roll), 0],
+                          [-np.sin(self.max_roll), np.cos(self.max_roll), 0],
+                          [        0          ,      0            , 1]])
+        print ('R phi', R_phi)
+
+        R_theta = np.array([[1,      0            ,         0         ],
+                            [0, np.cos(self.max_roll), np.sin(self.max_roll)],
+                            [0,-np.sin(self.max_roll), np.cos(self.max_roll)]])
+        print ('R theta', R_theta)
+        R = np.matmul(R_phi, R_theta)
+        print ('Total Rotation', R)
+        thrust_max = self.max_throttle*self.gravity*self.mass#/self.thrust_eq
+        print ('Thrust Max', thrust_max)
+        max_acc = np.matmul(R,np.array([[0],[0],[-thrust_max]]))*1/self.mass
+        max_acc = -max_acc.flatten()
+        print (max_acc)
+       
+        lateral_acc_max = 1#max_acc[0]
+        vertical_acc_max = max_acc[2]
+        psidot_max = self.max_yaw_rate
+        
+        Q = np.diag(self.xlim)
+        
+        #TODO: back out max acc from max angle commands in params
+        #TODO: saturate error state and use that as parameters in Q
+        #TODO: change Q and R to use those parameters to fly
+
+        # Compute K for lqr controller gains
+        #from brysons rule Qii = 1/max allowable state
+        # Rii = 1/max allowable control
+        
+        # for Q
+        # lateral_e_max = 1.0
+        # vertical_e_max = 1.0
+        # psi_e_max = 10.0
+
+        # Q = np.diag([1/lateral_e_max,
+                     # 1/lateral_e_max,
+                     # 1/vertical_e_max,
+                     # 0,
+                     # 0,
+                     # 0,
+                     # 1/psi_e_max])
+
+        # # for R these gains were working
+        # lateral_acc_max = 0.01
+        # vertical_acc_max = 0.001
+        # psidot_max = 0.1
+
+        R = np.diag([1/lateral_acc_max,
+                     1/lateral_acc_max,
+                     1/vertical_acc_max,
+                     1/psidot_max])
+
+        # Q = 0.1*np.matmul(C.T,C)
+        # R = 12*np.eye(4)
+
+        # Q = np.diag([.01,.01,.1,0,0,0,0.1])
+        # R = np.diag([1000,1000,1000,12])
+
+        K,P,E = self.computeLQR(A,B,Q,R)
+        return K
+
     def update(self):
         X = np.array([self.pn,self.pe,self.pd,self.pndot,self.pedot,self.pddot,self.psi])
 
@@ -165,7 +201,7 @@ class LQR():
                           self.psi_d,])
         # Error state
         X_tilde = X-X_des
-
+        X_tilde = np.clip(X_tilde,-self.xlim, self.xlim)
         u_tilde = np.matmul(-self.K,X_tilde)
 
         u_ff = np.array([self.pnddot_c,self.peddot_c,self.pdddot_c,self.r_c])

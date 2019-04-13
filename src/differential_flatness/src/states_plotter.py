@@ -234,7 +234,8 @@ class Plotter:
         # sio.savemat('diff_flat_data.mat',self.state_mat)
         # sio.savemat(outfile,self.state_mat)
     def savecallback(self,event):
-        sio.savemat('/home/jacob/magicc_lab/slam_ws/src/ekf_slam/src/diff_flat_fix_data.mat',self.state_mat)
+        pass
+        # sio.savemat('/home/jacob/magicc_lab/slam_ws/src/ekf_slam/src/diff_flat_fix_data.mat',self.state_mat)
     def update_state_mat(self):
         self.state_mat['pn_c'].append(self.pn_d)
         self.state_mat['pe_c'].append(self.pe_d)
@@ -335,7 +336,7 @@ class Plotter:
         self.pn_d = msg.x
         self.pe_d = msg.y
         self.pd_d = msg.F#-1
-        self.phi_d = msg.z
+        self.psi_d = msg.z
         # print self.pn_d
 
         # unpack time
@@ -357,8 +358,8 @@ class Plotter:
         self.time_d = self.time_t
 
     def uffCallback(self,msg):
-        # pass
-        self.phi_d = msg.x
+        pass
+        # self.phi_d = msg.x
     #     self.theta_d = msg.y
     #     self.u_d = msg.F
     #     self.r_d = msg.z
@@ -371,7 +372,7 @@ class Plotter:
     #     self.time_d = self.time_t
 
     def cmdCallback(self,msg):
-        # self.phi_d = msg.x
+        self.phi_d = msg.x
         self.theta_d = msg.y
         # self.u_d = msg.F
         self.r_d = msg.z

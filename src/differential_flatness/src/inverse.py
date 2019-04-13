@@ -66,7 +66,7 @@ class Inverse():
         theta_d = np.arctan2(float(z[0]),float(z[2]))
         #eqn 16 from paper
         r_d = self.r_c*np.cos(self.theta)*np.cos(self.phi)-self.q*np.sin(self.phi)
-
+        
         self.v_command.x = phi_d
         self.v_command.y = theta_d
         self.v_command.F = T_d
