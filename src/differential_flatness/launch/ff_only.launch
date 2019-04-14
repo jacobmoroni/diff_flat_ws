@@ -57,19 +57,19 @@
       <remap from="estimate" to="ground_truth/odometry/NED"/>
       <remap from="diff_flat_command" to="diff_flat_cmd"/> 
       <remap from="high_level_command" to="trajectory"/>
+      <param name="control_type" type="int" value="2"/>
     </node>
 
-    <!-- LQR Controller -->
-     <node name="LQR" pkg="differential_flatness" type="LQR.py" output="screen">
-      <remap from="state" to="ground_truth/odometry/NED"/>
-      <remap from="estimate" to="estimate"/>
-    </node> 
+    <!--[> LQR Controller <]-->
+     <!--<node name="LQR" pkg="differential_flatness" type="LQR.py" output="screen">-->
+      <!--<remap from="state" to="ground_truth/odometry/NED"/>-->
+      <!--<remap from="estimate" to="estimate"/>-->
+    <!--</node> -->
 
     <!-- inverse -->
     <node name="inverse" pkg="differential_flatness" type="inverse.py" output="screen">
       <remap from="state" to="ground_truth/odometry/NED"/>
-      <remap from="feed_forward_control" to="u_raw"/>
-       <!--<remap from="command" to="diff_flat_cmd"/> -->
+      <remap from="u_command" to="u_ff"/>
     </node>
 
     <!-- Attitude_control -->

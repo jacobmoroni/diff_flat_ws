@@ -1,6 +1,7 @@
 <?xml version="1.0"?>
 <launch>
   <arg name="visualize"             default="true"/>
+  <arg name="control_type"          default="2"/>
   <arg name="mav_name"              default="multirotor"/>
   <arg name="color"                 default="White"/>
   <arg name="x"                     default="2.5"/>
@@ -57,6 +58,7 @@
       <remap from="estimate" to="ground_truth/odometry/NED"/>
       <remap from="diff_flat_command" to="diff_flat_cmd"/> 
       <remap from="high_level_command" to="trajectory"/>
+      <param name="control_type" type="int" value="$(arg control_type)"/>
     </node>
 
     <!-- LQR Controller -->
@@ -68,8 +70,6 @@
     <!-- inverse -->
     <node name="inverse" pkg="differential_flatness" type="inverse.py" output="screen">
       <remap from="state" to="ground_truth/odometry/NED"/>
-      <remap from="feed_forward_control" to="u_raw"/>
-       <!--<remap from="command" to="diff_flat_cmd"/> -->
     </node>
 
     <!-- Attitude_control -->
@@ -81,19 +81,12 @@
     <node name="trajectory" pkg="differential_flatness" type="traj.py" output="screen">
       <remap from="waypoint" to="high_level_command"/>
       <remap from="state" to="ground_truth/odometry/NED"/>
-      <!-- <remap from="state" to="estimate"/> -->
     </node>
 
     <!-- plot states -->
     <node pkg="differential_flatness" type="states_plotter.py" name="states_plotter" output="screen">
       <param name="time_window" value="60.0"/>
     </node> 
-    
-    <!-- plot states -->
-    <!--<node pkg="roscopter" type="states_plotter.py" name="states_plotter" output="screen">-->
-      <!--<param name="time_window" value="10.0"/>-->
-    <!--</node>-->
-
   </group>
 
 </launch>

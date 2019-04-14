@@ -1,56 +1,57 @@
 clc
 clear
-
-load pid_data2.mat
-pid_pn = pn(500:600);
-pid_pe = pe(500:600);
-pid_pd = pd(500:600);
-pid_pn_c = pn_c(500:600);
-pid_pe_c = pe_c(500:600);
-pid_pd_c = pd_c(500:600);
-pid_u = u(500:600);
-pid_v = v(500:600);
-pid_w = w(500:600);
-pid_u_c = u_c(500:600);
-pid_v_c = v_c(500:600);
-pid_w_c = w_c(500:600);
-pid_yaw_c = yaw_c(500:600);
-pid_pitch_c = pitch_c(500:600);
-pid_roll_c = roll_c(500:600);
-pid_yaw = yaw(500:600);
-pid_pitch = pitch(500:600);
-pid_roll = roll(500:600);
-pid_p = p(500:600);
-pid_q = q(500:600);
-pid_r = r(500:600);
-pid_p_c = p_c(500:600);
-pid_q_c = q_c(500:600);
-pid_r_c = r_c(500:600);
-load diff_flat_data2.mat
-pn = pn(500:600);
-pe = pe(500:600);
-pd = pd(500:600);
-pn_c = pn_c(500:600);
-pe_c = pe_c(500:600);
-pd_c = pd_c(500:600);
-u = u(500:600);
-v = v(500:600);
-w = w(500:600);
-u_c = u_c(500:600);
-v_c = v_c(500:600);
-w_c = w_c(500:600);
-yaw_c = yaw_c(500:600);
-pitch_c = pitch_c(500:600);
-roll_c = roll_c(500:600);
-yaw = yaw(500:600);
-pitch = pitch(500:600);
-roll = roll(500:600);
-p = p(500:600);
-q = q(500:600);
-r = r(500:600);
-p_c = p_c(500:600);
-q_c = q_c(500:600);
-r_c = r_c(500:600);
+time_start = 500;
+time_stop = 600;
+load data/pid_data2.mat
+pid_pn = pn(time_start:time_stop);
+pid_pe = pe(time_start:time_stop);
+pid_pd = pd(time_start:time_stop);
+pid_pn_c = pn_c(time_start:time_stop);
+pid_pe_c = pe_c(time_start:time_stop);
+pid_pd_c = pd_c(time_start:time_stop);
+pid_u = u(time_start:time_stop);
+pid_v = v(time_start:time_stop);
+pid_w = w(time_start:time_stop);
+pid_u_c = u_c(time_start:time_stop);
+pid_v_c = v_c(time_start:time_stop);
+pid_w_c = w_c(time_start:time_stop);
+pid_yaw_c = yaw_c(time_start:time_stop);
+pid_pitch_c = pitch_c(time_start:time_stop);
+pid_roll_c = roll_c(time_start:time_stop);
+pid_yaw = yaw(time_start:time_stop);
+pid_pitch = pitch(time_start:time_stop);
+pid_roll = roll(time_start:time_stop);
+pid_p = p(time_start:time_stop);
+pid_q = q(time_start:time_stop);
+pid_r = r(time_start:time_stop);
+pid_p_c = p_c(time_start:time_stop);
+pid_q_c = q_c(time_start:time_stop);
+pid_r_c = r_c(time_start:time_stop);
+load data/diff_flat_data2.mat
+pn = pn(time_start:time_stop);
+pe = pe(time_start:time_stop);
+pd = pd(time_start:time_stop);
+pn_c = pn_c(time_start:time_stop);
+pe_c = pe_c(time_start:time_stop);
+pd_c = pd_c(time_start:time_stop);
+u = u(time_start:time_stop);
+v = v(time_start:time_stop);
+w = w(time_start:time_stop);
+u_c = u_c(time_start:time_stop);
+v_c = v_c(time_start:time_stop);
+w_c = w_c(time_start:time_stop);
+yaw_c = yaw_c(time_start:time_stop);
+pitch_c = pitch_c(time_start:time_stop);
+roll_c = roll_c(time_start:time_stop);
+yaw = yaw(time_start:time_stop);
+pitch = pitch(time_start:time_stop);
+roll = roll(time_start:time_stop);
+p = p(time_start:time_stop);
+q = q(time_start:time_stop);
+r = r(time_start:time_stop);
+p_c = p_c(time_start:time_stop);
+q_c = q_c(time_start:time_stop);
+r_c = r_c(time_start:time_stop);
 
 xmatrix = [pn_c;pn;pid_pn]';
 ymatrix = [pe_c;pe;pid_pe]';
@@ -63,7 +64,7 @@ for i = 1:length(pitch_c)
     end
 end
 
-t = time(500:600);
+t = time(time_start:time_stop);
 pn_data = [pn_c;pn;pid_pn]';
 pe_data = [pe_c;pe;pid_pe]';
 pd_data = [pd_c;pd;pid_pd-1]';
