@@ -31,8 +31,8 @@ mostly derived from paper
 ![image](images/ref.png "Differential Flatness Paper")
 
 Background
-![image](images/Differential Flatness With LQR.png "Differential Flatness Explanation")
-![image](images/Differential Flatness With LQR _2.png "Differential Flatness Explanation")
+![image](images/df_exp_1.png "Differential Flatness Explanation")
+![image](images/df_exp_2.png "Differential Flatness Explanation")
 
 Block Diagram for differential flatness control
 ![image](images/Block_Diagram.png "Differential Flatness Explanation")
