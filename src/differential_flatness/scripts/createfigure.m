@@ -15,9 +15,10 @@ hold(axes1,'on');
 
 % Create multiple lines using matrix input to plot3
 plot31 = plot3(XMatrix1,YMatrix1,ZMatrix1,'Parent',axes1,'LineWidth',2);
-set(plot31(1),'DisplayName','Command','Color',[1 0 0]);
-set(plot31(2),'DisplayName','With Differential Flatness','Color',[0 0 1]);
-set(plot31(3),'DisplayName','PID Only','LineStyle','--','Color',[0 0 0]);
+set(plot31(1),'DisplayName','Command','LineStyle','--','Color',[0 0 0]);
+set(plot31(2),'DisplayName','PID','Color',[0 0 1]);
+set(plot31(3),'DisplayName','LQR','Color',[1 0 0]);
+set(plot31(4),'DisplayName','PID only','Color',[1 1 0]);
 
 % plot31 = plot3(XMatrix1,YMatrix1,ZMatrix1,'Parent',axes1);
 % set(plot31(1),'DisplayName','Command');
@@ -26,7 +27,7 @@ set(plot31(3),'DisplayName','PID Only','LineStyle','--','Color',[0 0 0]);
 
 view(axes1,[-35 67]);
 grid(axes1,'on');
-zlim([-3.5,-2.5]);
+zlim([-2.5,-1.5]);
 title('Trajectory Over Time','fontsize',16);
 xlabel('Pn','fontsize',12);
 ylabel('Pe','fontsize',12);

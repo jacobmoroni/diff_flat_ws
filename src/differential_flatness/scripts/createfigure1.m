@@ -23,9 +23,9 @@ hold(axes1,'on');
 
 % Create multiple lines using matrix input to plot
 plot1 = plot(X1,YMatrix1,'Parent',axes1,'LineWidth',2);
-set(plot1(1),'DisplayName','Command','Color',[1 0 0]);
-set(plot1(2),'DisplayName','With Differential Flatness','Color',[0 0 1]);
-set(plot1(3),'DisplayName','PID Only','LineStyle','--','Color',[0 0 0]);
+set(plot1(1),'DisplayName','LQR w/ff','Color',[1 0 0]);
+set(plot1(2),'DisplayName','PID w/ff','Color',[0 0 1]);
+set(plot1(3),'DisplayName','PID only','LineStyle','--','Color',[0 0 0]);
 
 % Create ylabel
 ylabel('Pn','fontsize',12);

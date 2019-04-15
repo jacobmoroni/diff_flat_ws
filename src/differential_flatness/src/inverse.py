@@ -57,9 +57,12 @@ class Inverse():
                                 self.pdddot_c*self.pdddot_c)
         
         #eqn 13 from paper
-        z = np.matmul(rot_psi,np.array([[float(self.pnddot_c)],
-                                        [float(self.peddot_c)],
-                                        [float(self.pdddot_c)]]))*self.mass/(-T_d)
+        if T_d != 0:
+            z = np.matmul(rot_psi,np.array([[float(self.pnddot_c)],
+                                            [float(self.peddot_c)],
+                                            [float(self.pdddot_c)]]))*self.mass/(-T_d)
+        else:
+            z= np.array([[0],[0],[0]])
         #eqn 14 from paper
         phi_d = np.arcsin(float(-z[1]))
         #eqn 15 from paper

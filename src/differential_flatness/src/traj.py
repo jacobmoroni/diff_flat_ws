@@ -23,7 +23,7 @@ class Trajectory():
         self.alpha = 2.5 #amplitude of pn wave
         self.beta = 1.25 #amplitude of pe wave
         self.eta = -2.0 #pd
-        self.omega_f = 1.5 #period of cycle final
+        self.omega_f = 2.0 #period of cycle final
         self.omega_s = 0.05 #period of cycle start
 
 

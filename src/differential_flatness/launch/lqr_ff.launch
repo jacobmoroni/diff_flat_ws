@@ -85,7 +85,9 @@
 
     <!-- plot states -->
     <node pkg="differential_flatness" type="states_plotter.py" name="states_plotter" output="screen">
-      <param name="time_window" value="60.0"/>
+      <param name="time_window" value="10.0"/>
+      <!--<param name="file_name" value="lqr_ff_data.mat"/>-->
+      <!--<param name="file_name" value="lqr_only.mat"/>-->
     </node> 
   </group>
 

@@ -87,6 +87,7 @@
     <!-- plot states -->
     <node pkg="differential_flatness" type="states_plotter.py" name="states_plotter" output="screen">
       <param name="time_window" value="10.0"/>
+      <param name="file_name" value="ff_only.mat"/>
     </node> 
     
     <!-- plot states -->

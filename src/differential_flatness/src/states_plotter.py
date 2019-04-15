@@ -9,6 +9,7 @@ from sensor_msgs.msg import Imu
 from geometry_msgs.msg import Vector3Stamped
 from rosflight_msgs.msg import Command
 import scipy.io as sio
+import rospkg
 
 # Enable antialiasing for prettier plots
 pg.setConfigOptions(antialias=True)
@@ -20,6 +21,10 @@ class Plotter:
     def __init__(self):
         # get parameters from server
         # self.outfile = diff_flat_data.mat
+        rospack = rospkg.RosPack()
+        self.folder = rospack.get_path('differential_flatness')
+        self.file = rospy.get_param('~file_name', 'temp.mat')
+
         self.t_win = rospy.get_param('~time_window', 5.0)
         self.time0 = 0
         self.init_time = True
@@ -234,8 +239,8 @@ class Plotter:
         # sio.savemat('diff_flat_data.mat',self.state_mat)
         # sio.savemat(outfile,self.state_mat)
     def savecallback(self,event):
-        pass
-        # sio.savemat('/home/jacob/magicc_lab/slam_ws/src/ekf_slam/src/diff_flat_fix_data.mat',self.state_mat)
+        location = self.folder + '/scripts/data/' + self.file
+        sio.savemat(location,self.state_mat)
     def update_state_mat(self):
         self.state_mat['pn_c'].append(self.pn_d)
         self.state_mat['pe_c'].append(self.pe_d)
