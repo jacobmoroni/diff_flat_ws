@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 '''
 attitude_control.py
-This file takes into account some of the weaknesses of differential flatness and 
+This file takes into account some of the weaknesses of differential flatness and
 tries to minimize them. it takes in the v_command, the trajectory, and the state
 and outputs a cleaned up command called diff_flat_command
 '''
@@ -33,7 +33,7 @@ class Attitude():
         self.pd = 0
         self.pd_c = 0
         self.w = 0
-        
+
         self.control_mode = 0
         self.rot_true = np.array([[1,0,0],[0,1,0],[0,0,1]])
         self.prev_time = rospy.get_time()
@@ -59,14 +59,14 @@ class Attitude():
         cp = np.cos(self.phi_c)
         sp = np.sin(self.phi_c)
         rot_des = np.array([cp*st,-sp,cp*ct])
-        
+
         # Find actual orientation
         ctt = np.cos(self.theta)
         stt = np.sin(self.theta)
         cpt = np.cos(self.phi)
         spt= np.sin(self.phi)
         rot_true = np.array([cpt*stt,-spt,cpt*ctt])
-        
+
         # scale the thrust by the ratio of desired and true orientations
         T_correct = np.dot(rot_des,rot_true)
         return T_correct
@@ -77,18 +77,14 @@ class Attitude():
         phi_d = self.phi_c
         theta_d = self.theta_c
         r_d = self.r_c
-        
+
         T_correct = self.scaleThrust()
-        
+
         #Add pd control to get height to desired height
         T_d = self.F_c - self.PD(self.pd,self.pd_c,self.w,.5,1)
-        
+
         #use the scale computed to scale down thrust
         T_d = T_d*T_correct
-
-        # phi_d = self.PD(self.phi,self.phi_c,self.p,7.6394,0.9592)
-        # theta_d = self.PD(self.theta,self.theta_c,self.q,7.6394,1.5596)
-        # r_d = self.PD(self.r,self.r_c,0,2.8648,0)
 
         self.df_cmd.x = phi_d
         self.df_cmd.y = theta_d
@@ -96,13 +92,15 @@ class Attitude():
         #convert thrust to g's *equilibrium thrust to use in roscopter
         self.df_cmd.F = T_d/(self.mass*self.g)*self.thrust_eq#*(.44/self.thrust_eq)
         self.df_cmd.z = r_d
-        
+
         self.df_cmd.mode = self.control_mode
         self.command_pub_.publish(self.df_cmd)
 
     def PD(self,act,des,derivative,P,D):
         error = des-act
-        # differentiator = ((2*self.tau-Ts)/(2*tau+Ts)*differentiator + 
+
+        # you could use this rather than the true state
+        # differentiator = ((2*self.tau-Ts)/(2*tau+Ts)*differentiator +
                 # 2/(2*self.tau+Ts)*(error - self.error_d1));
         out = P*error-D*derivative
         return out
@@ -162,4 +160,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-

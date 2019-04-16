@@ -2,7 +2,7 @@
 
 '''
 inverse.py
-Takes in as input the u command (commanded accelerations and yawrate) 
+Takes in as input the u command (commanded accelerations and yawrate)
 and converts it to the v command (commanded angles, yawrate, and thrust)
 '''
 
@@ -38,24 +38,24 @@ class Inverse():
         self.cmd_sub_ = rospy.Subscriber('u_command', Command, self.urawCallback, queue_size=5)
         self.xhat_sub_ = rospy.Subscriber('state', Odometry, self.odometryCallback, queue_size=5)
         self.command_pub_ = rospy.Publisher('v_command', Command, queue_size=5, latch=True)
-        
+
         self.v_command = Command()
         self.control_mode = 0
-    
+
     def saturate(self,command,min_val,max_val):
         return min(max_val,max(min_val,command))
 
     def update(self):
         # Invert the command
-
         rot_psi = np.array([[np.cos(self.psi), -np.sin(self.psi), 0],
                             [np.sin(self.psi),  np.cos(self.psi), 0],
                             [0               ,0                 , 1]])
+                            
         #eqn 11 from paper
         T_d = self.mass*np.sqrt(self.pnddot_c*self.pnddot_c+
                                 self.peddot_c*self.peddot_c+
                                 self.pdddot_c*self.pdddot_c)
-        
+
         #eqn 13 from paper
         if T_d != 0:
             z = np.matmul(rot_psi,np.array([[float(self.pnddot_c)],
@@ -69,7 +69,7 @@ class Inverse():
         theta_d = np.arctan2(float(z[0]),float(z[2]))
         #eqn 16 from paper
         r_d = self.r_c*np.cos(self.theta)*np.cos(self.phi)-self.q*np.sin(self.phi)
-        
+
         self.v_command.x = phi_d
         self.v_command.y = theta_d
         self.v_command.F = T_d

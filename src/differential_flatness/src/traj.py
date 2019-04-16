@@ -2,8 +2,8 @@
 
 '''
 traj.py
-Generate a desired trajectory and take the first and second derivatives 
-of the trajectory to derive feed forward control and desired 
+Generate a desired trajectory and take the first and second derivatives
+of the trajectory to derive feed forward control and desired
 state values at each time step
 '''
 
@@ -17,13 +17,13 @@ from roscopter_msgs.srv import AddWaypoint, RemoveWaypoint, SetWaypointsFromFile
 class Trajectory():
 
     def __init__(self):
-        
+
         # Parameters for feed forward trajectory
-        
+
         self.alpha = 2.5 #amplitude of pn wave
         self.beta = 1.25 #amplitude of pe wave
         self.eta = -2.0 #pd
-        self.omega_f = 2.0 #period of cycle final
+        self.omega_f = 1.5 #period of cycle final
         self.omega_s = 0.05 #period of cycle start
 
 
@@ -55,7 +55,7 @@ class Trajectory():
         while not rospy.is_shutdown():
             # wait for new messages and call the callback when they arrive
             rospy.spin()
-    
+
     def alphaBlend(self,spinup_time):
         #this function is used to slowly ramp up to desired period in trajectory
         alpha = min(1,(self.t-self.takeoff_time)/spinup_time)
@@ -80,10 +80,10 @@ class Trajectory():
             # amp = 0
             # omega_roll = 0
             # offset = 0
-            
+
             self.u_ff.mode = 0 #this says to just use PID to get into position
             if self.t <= self.takeoff_time/5.0:
-                # to avoid a step input in the beginning, this creates a ramp 
+                # to avoid a step input in the beginning, this creates a ramp
                 # up to the step to get it into position for trajectory
                 pn = self.alpha#/self.takeoff_time*self.t*5
                 pe = offset
@@ -109,12 +109,12 @@ class Trajectory():
                 peddot = omega_roll*amp*np.cos(omega_roll*(self.t-self.takeoff_time+rollin))
             #
             pndot = 0
-           
+
             pddot = 0
 
             # Feed Forward Controls
             pnddot = 0
-            
+
             pdddot = 0-self.g;
             psidot = 0;
 
@@ -122,7 +122,7 @@ class Trajectory():
             self.u_ff.mode = 1
             # self.omega = self.alphaBlend(60.0)
             self.omega = self.alphaBlend(0.05)
-            
+
             # Trajectory
             # the following are for a figure 8 trajectory
             pn = self.alpha*np.cos(self.omega/2.0*(self.t-self.takeoff_time));
@@ -161,22 +161,22 @@ class Trajectory():
             # pdddot = 0-self.g;
             # psidot = 0;
 
-        acc_x = pnddot#/(self.g*self.mass)
-        acc_y = peddot#/(self.g*self.mass)
-        acc_z = pdddot#/(self.g*self.mass)
+        acc_x = pnddot
+        acc_y = peddot
+        acc_z = pdddot
 
         #desired position (from trajectory)
         self.cmd.x = pn
         self.cmd.y = pe
         self.cmd.F = pd
         self.cmd.z = psi
-        
+
         #deisred velocities
         self.xdes.x = pndot
         self.xdes.y = pedot
         self.xdes.F = pddot
         self.xdes.z = psi
-        
+
         #feed forward controls
         self.u_ff.x = acc_x
         self.u_ff.y = acc_y

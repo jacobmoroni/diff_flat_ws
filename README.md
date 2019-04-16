@@ -27,7 +27,8 @@ For PID only, no feed forward term:
 To only show states plotter not gazebo for any of the above commands, just add `visualize:=false` to the end.
 ___
 ### Differential Flatness derivation and Explanation
-mostly derived from paper
+mostly derived from [this](https://ieeexplore.ieee.org/document/6095098)
+ paper
 ![image](images/ref.png "Differential Flatness Paper")
 
 Background
