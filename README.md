@@ -34,6 +34,9 @@ Background
 ![image](images/df_exp_1.png "Differential Flatness Explanation")
 ![image](images/df_exp_2.png "Differential Flatness Explanation")
 
+State Space
+![image](images/ss.png "Differential Flatness Explanation")
+
 Block Diagram for differential flatness control
 ![image](images/Block_Diagram.png "Differential Flatness Explanation")
 
